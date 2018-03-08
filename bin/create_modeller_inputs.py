@@ -2,10 +2,14 @@
 import re
 import sys
 from collections import defaultdict
+import requests
+import os.path
 
 #
 # usage
 # create_modeller_inputs.py query example/example_alignment.fasta /scratch1/NOT_BACKED_UP/dbuchan/pdb/ftp.wwpdb.org/pub/pdb/data/structures/all/pdb/ /webdata/data/cath_pdb/ 0
+#
+# TODO: Add realign option
 #
 
 
@@ -38,14 +42,18 @@ def printFasta(deets, job_id):
         fasta.write(deets['Query'])
 
 
-def printPIR(deets, job_id):
+def printPIR(deets, job_id, type):
     file_name = job_id+'.pir'
     with open(file_name, 'w') as pir:
         pir.write('>P1;Query\n')
         pir.write('sequence:Query::::::::\n')
         pir.write(deets['Query']+'*\n')
         pir.write('>P1;'+deets['KNOWN']+'\n')
-        pir.write('structure:' + deets['KNOWN'][:4] + '::' + deets['KNOWN'][4:5] + '::' + deets['KNOWN'][4:5] + '::::\n')
+        if type == 0:
+            pir.write('structure:' + deets['KNOWN'][:4] + '::' + deets['KNOWN'][4:5] + '::' + deets['KNOWN'][4:5] + '::::\n')
+        else:
+            pir.write('structure:' + deets['KNOWN'] + '::'+deets['KNOWN'][4:5]+'::::::\n')
+
         pir.write(deets[deets['KNOWN']]+'*\n')
 
 
@@ -70,12 +78,20 @@ def printModPY(deets, type, pdb_path, cath_dom_path, job_id):
         if type == 0:
             strModPy += "\'" + deets['KNOWN'][:4].lower()+deets['KNOWN'][4:6] + "\'"
         else:
-            strModPy += "\'" + deets['KNOWN'][:4] + "\'"
+            if not os.path.isfile(cath_dom_path+deets['KNOWN']):
+                print('GETTING CATH DOMAIN: '+deets['KNOWN'])
+                url = 'http://www.cathdb.info/version/v4_2_0/api/rest/id/'+deets['KNOWN']+'.pdb'
+                r = requests.get(url)
+                fh = open(cath_dom_path+deets['KNOWN'], "w")
+                fh.write(r.text)
+                fh.close()
+            strModPy += "\'" + deets['KNOWN'] + "\'"
 
         strModPy += "),\n"
         strModPy += "              sequence=\'Query\')\n"
         strModPy += "a.starting_model = 1\n"
         strModPy += "a.ending_model = 1\n"
+        strModPy += "a.auto_align()\n"
         strModPy += "a.make()\n"
         strModPy += "ok_models = filter(lambda x: x[\'failure\'] is None, a.outputs)\n"
         strModPy += "key = \'molpdf\'\n"
@@ -94,5 +110,5 @@ model_type = sys.argv[5]  # 0 - pdb mode, 1 - cath model
 
 queryDetails = parseQuerySeq(alignment)
 printFasta(queryDetails, job_id)
-printPIR(queryDetails, job_id)
-printModPY(queryDetails, 0, pdb, cath_pdb, job_id)
+printPIR(queryDetails, job_id, type)
+printModPY(queryDetails, model_type, pdb, cath_pdb, job_id)
