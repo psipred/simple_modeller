@@ -106,7 +106,7 @@ job_id = sys.argv[1]  # identifier/path root for files
 alignment = sys.argv[2]  # fasta alignment
 pdb = sys.argv[3]  # path to pdb coordinate files
 cath_pdb = sys.argv[4]  # path to cath coordinate files
-model_type = sys.argv[5]  # 0 - pdb mode, 1 - cath model
+model_type = int(sys.argv[5])  # 0 - pdb mode, 1 - cath model
 
 queryDetails = parseQuerySeq(alignment)
 printFasta(queryDetails, job_id)
