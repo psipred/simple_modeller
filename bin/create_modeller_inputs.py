@@ -48,10 +48,11 @@ def printPIR(deets, job_id, type):
         pir.write('>P1;Query\n')
         pir.write('sequence:Query::::::::\n')
         pir.write(deets['Query']+'*\n')
-        pir.write('>P1;'+deets['KNOWN']+'\n')
         if type == 0:
-            pir.write('structure:' + deets['KNOWN'][:4] + '::' + deets['KNOWN'][4:5] + '::' + deets['KNOWN'][4:5] + '::::\n')
+            pir.write('>P1;'+deets['KNOWN'][:4]+'\n')
+            pir.write('structure:' + deets['KNOWN'][:4] + ':FIRST:' + deets['KNOWN'][4:5] + '::' + deets['KNOWN'][4:5] + '::::\n')
         else:
+            pir.write('>P1;'+deets['KNOWN']+'\n')
             pir.write('structure:' + deets['KNOWN'] + '::'+deets['KNOWN'][4:5]+'::::::\n')
 
         pir.write(deets[deets['KNOWN']]+'*\n')
@@ -76,7 +77,8 @@ def printModPY(deets, type, pdb_path, cath_dom_path, job_id):
         strModPy += "              knowns=("
 
         if type == 0:
-            strModPy += "\'" + deets['KNOWN'][:4].lower()+deets['KNOWN'][4:6] + "\'"
+#            strModPy += "\'" + deets['KNOWN'][:4].lower()+deets['KNOWN'][4:6] + "\'"
+            strModPy += "\'" + deets['KNOWN'][:4] + "\'"
         else:
             if not os.path.isfile(cath_dom_path+deets['KNOWN']):
                 print('GETTING CATH DOMAIN: '+deets['KNOWN'])
@@ -110,5 +112,5 @@ model_type = int(sys.argv[5])  # 0 - pdb mode, 1 - cath model
 
 queryDetails = parseQuerySeq(alignment)
 printFasta(queryDetails, job_id)
-printPIR(queryDetails, job_id, type)
+printPIR(queryDetails, job_id, model_type)
 printModPY(queryDetails, model_type, pdb, cath_pdb, job_id)
